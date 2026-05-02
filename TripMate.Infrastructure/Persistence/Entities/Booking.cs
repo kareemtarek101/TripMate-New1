@@ -48,7 +48,7 @@ public partial class Booking
     [Column("travel_end_date")]
     public DateOnly TravelEndDate { get; set; }
 
-    [Column("status")]
+    //[Column("status")]
     [StringLength(20)]
     
     public string PaymentStatus { get; set; } = null!;

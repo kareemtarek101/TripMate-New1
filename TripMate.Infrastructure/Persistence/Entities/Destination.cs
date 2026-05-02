@@ -27,7 +27,7 @@ public partial class Destination
     [StringLength(100)]
 
     public string ImageUrl { get; set; }
-    public string? City { get; set; }
+    //public string? City { get; set; }
 
     public decimal Price { get; set; }
 
