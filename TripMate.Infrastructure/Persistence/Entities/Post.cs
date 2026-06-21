@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace TripMate.Infrastructure.Persistence.Entities;
 
-public partial class Post
+public class Post
 {
     [Key]
     [Column("post_id")]
@@ -15,44 +12,45 @@ public partial class Post
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("destination_id")]
-    public int? DestinationId { get; set; }
-
-    [Column("package_id")]
-    public int? PackageId { get; set; }
-
+    // 🔥 Title
     [Column("title")]
     [StringLength(150)]
     public string Title { get; set; } = null!;
 
-    [Column("content")]
-    public string? Content { get; set; }
+    // 🔥 Location (بدل Destination دلوقتي)
+    [Column("location")]
+    [StringLength(150)]
+    public string Location { get; set; } = null!;
 
-    [Column("trip_type")]
-    [StringLength(50)]
-    public string? TripType { get; set; }
+    // 🔥 Description (بدل Content)
+    [Column("description")]
+    public string? Description { get; set; }
 
+    // 🔥 صورة واحدة بسيطة
+    [Column("image_url")]
+    public string ImageUrl { get; set; } = null!;
+
+    // ⭐ Rating
     [Column("rating")]
-    public int? Rating { get; set; }
+    [Range(1, 5)]
+    public int Rating { get; set; }
 
+    // 🌍 Public / Private
     [Column("is_public")]
-    public bool IsPublic { get; set; }
+    public bool IsPublic { get; set; } = true;
 
     [Column("created_at")]
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // 🔗 User
+    [ForeignKey("UserId")]
+    [InverseProperty("Posts")]
+    public virtual User User { get; set; } = null!;
 
     [ForeignKey("DestinationId")]
     [InverseProperty("Posts")]
     public virtual Destination? Destination { get; set; }
 
-    [ForeignKey("PackageId")]
-    [InverseProperty("Posts")]
-    public virtual Package? Package { get; set; }
-
     [InverseProperty("Post")]
     public virtual ICollection<PostMedium> PostMedia { get; set; } = new List<PostMedium>();
-
-    [ForeignKey("UserId")]
-    [InverseProperty("Posts")]
-    public virtual User User { get; set; } = null!;
 }

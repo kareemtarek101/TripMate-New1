@@ -42,8 +42,9 @@ public class FavoritesController : ControllerBase
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetUserFavorites(int userId)
     {
-        var result = await _favoriteService.GetUserFavorites(userId);
+        var favorites =
+            await _favoriteService.GetUserFavoritesAsync(userId);
 
-        return Ok(result);
+        return Ok(favorites);
     }
 }

@@ -115,14 +115,25 @@ namespace TripMate.Application.Services
                     };
                 })
                 .OrderByDescending(x => x.Score)
-                .Take(10)
-                .Select(x => new DestinationDto
-                {
-                    Id = x.Destination.DestinationId,
-                    Name = x.Destination.Name,
-                    Price = x.Destination.Price
-                })
-                .ToList();
+.Take(10)
+.Select(x => new DestinationDto
+{
+    Id = x.Destination.DestinationId,
+    Name = x.Destination.Name,
+    Country = x.Destination.Country,
+    Description = x.Destination.Description,
+    ImageUrl = x.Destination.ImageUrl,
+    Price = x.Destination.Price,
+    DurationDays = x.Destination.DurationDays,
+    Itinerary = x.Destination.Itinerary,
+    Activities = x.Destination.Activities,
+
+    City = x.Destination.City,
+    AirportCode = x.Destination.AirportCode,
+
+    Rating = 0
+})
+.ToList();
 
             return result;
         }
@@ -136,8 +147,23 @@ namespace TripMate.Application.Services
 
             foreach (var dest in destinations.Take(5))
             {
-                var hotels = await _serpApi.GetHotels(dest.Name);
-                var flights = await _serpApi.GetFlights(from, dest.Name);
+
+                if (string.IsNullOrWhiteSpace(dest.City) ||
+        string.IsNullOrWhiteSpace(dest.AirportCode))
+                {
+                    continue;
+                }
+                var hotels = await _serpApi.GetHotels(
+                dest.City,
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(12))
+                    );
+
+                var flights = await _serpApi.GetFlights(
+    from,
+    dest.AirportCode,
+    DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+);
 
                 packages.Add(new PackageDto
                 {
@@ -179,7 +205,7 @@ namespace TripMate.Application.Services
             await _context.SaveChangesAsync();
         }
 
-        // 🔍 BEHAVIOR ANALYSIS
+        //  BEHAVIOR ANALYSIS
         private async Task<int?> GetUserPreferredTripType(int userId)
         {
             var favDestinations = await _context.Favorites

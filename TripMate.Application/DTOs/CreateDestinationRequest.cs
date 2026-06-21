@@ -15,4 +15,6 @@
     public string Itinerary { get; set; }
 
     public string? Activities { get; set; }
+
+    public int CategoryId { get; set; }
 }

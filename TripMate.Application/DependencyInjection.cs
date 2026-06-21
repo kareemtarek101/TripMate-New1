@@ -24,6 +24,10 @@ namespace TripMate.Application
             services.AddScoped<IRatingService, RatingService>();
             services.AddScoped<IFavoriteService, FavoriteService>();
             services.AddScoped<IInteractionService, InteractionService>();
+            services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IPackageService, PackageService>();
+            services.AddHttpClient<IPaymentService, PaymentService>();
+            services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IRecommendationService, RecommendationService>();
 
             return services;

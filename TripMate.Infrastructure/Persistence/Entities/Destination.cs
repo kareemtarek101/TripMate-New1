@@ -23,12 +23,16 @@ public partial class Destination
     [StringLength(100)]
     public string Country { get; set; } = null!;
 
-    [Column("city")]
-    [StringLength(100)]
 
     public string ImageUrl { get; set; }
-    //public string? City { get; set; }
 
+    [Column("city")]
+    [StringLength(100)]
+    public string? City { get; set; }
+
+    [Column("airport_code")]
+    [StringLength(10)]
+    public string? AirportCode { get; set; }
     public decimal Price { get; set; }
 
     public int DurationDays { get; set; }

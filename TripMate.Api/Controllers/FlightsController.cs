@@ -14,7 +14,11 @@ public class FlightsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get(string from, string to)
     {
-        var result = await _serpService.GetFlights(from, to);
+        var result = await _serpService.GetFlights(
+            from,
+            to,
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+        );
 
         return Ok(new ApiResponse<List<FlightDto>>(result));
     }

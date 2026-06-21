@@ -29,4 +29,5 @@ public partial class PostMedium
     [ForeignKey("PostId")]
     [InverseProperty("PostMedia")]
     public virtual Post Post { get; set; } = null!;
+
 }

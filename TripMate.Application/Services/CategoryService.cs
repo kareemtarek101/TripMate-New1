@@ -8,9 +8,26 @@ public class CategoryService : ICategoryService
     {
         _context = context;
     }
-
-    public async Task<List<Category>> GetAllAsync()
+    public async Task<int> CreateAsync(CreateCategoryRequest request)
     {
-        return await _context.Categories.ToListAsync();
+        var category = new Category
+        {
+            Name = request.Name
+        };
+
+        _context.Categories.Add(category);
+        await _context.SaveChangesAsync();
+
+        return category.Id; 
+    }
+    public async Task<List<CategoryDto>> GetAllAsync()
+    {
+        return await _context.Categories
+            .Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name
+            })
+            .ToListAsync();
     }
 }

@@ -20,7 +20,8 @@ public partial class TripMateDbContext : DbContext
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<Booking> Bookings { get; set; }
     public DbSet<Rating> Ratings { get; set; }
-
+    public DbSet<BookingItem> BookingItems { get; set; }
+    public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
     public DbSet<Category> Categories { get; set; }
 
@@ -35,7 +36,8 @@ public partial class TripMateDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
-    public virtual DbSet<Package> Packages { get; set; }
+    public DbSet<Package> Packages { get; set; }
+
 
     public virtual DbSet<PackageFlight> PackageFlights { get; set; }
 
@@ -63,7 +65,7 @@ public partial class TripMateDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.;Database=TripMate;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=.;Database=Trip-Mate;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +86,19 @@ public partial class TripMateDbContext : DbContext
                 .HasConstraintName("FK_Bookings_Users");
         });
 
+        modelBuilder.Entity<Role>().HasData(
+            new Role
+            {
+                RoleId = 1,
+                Name = "Admin"
+            },
+            new Role
+            {
+                RoleId = 2,
+                Name = "Traveller"
+            }
+         );
+
         modelBuilder.Entity<BookingTraveller>(entity =>
         {
             entity.HasKey(e => e.TravelerId).HasName("PK__BookingT__53C729FA564ADB6C");
@@ -99,6 +114,7 @@ public partial class TripMateDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
             entity.HasOne(d => d.TripType).WithMany(p => p.Destinations).HasConstraintName("FK_Destinations_TripTypes");
+            entity.HasOne(d => d.Category).WithMany().HasForeignKey(x=>x.CategoryId);
         });
 
         modelBuilder.Entity<DestinationMedium>(entity =>
@@ -180,6 +196,8 @@ public partial class TripMateDbContext : DbContext
                 .HasConstraintName("FK_Payments_Bookings");
         });
 
+
+
         modelBuilder.Entity<Post>(entity =>
         {
             entity.HasKey(e => e.PostId).HasName("PK__Posts__3ED7876658D7ED95");
@@ -187,9 +205,21 @@ public partial class TripMateDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.IsPublic).HasDefaultValue(true);
 
-            entity.HasOne(d => d.Destination).WithMany(p => p.Posts).HasConstraintName("FK_Posts_Destinations");
+            modelBuilder.Entity<Post>(entity =>
+            {
+                entity.HasKey(e => e.PostId).HasName("PK__Posts__3ED7876658D7ED95");
 
-            entity.HasOne(d => d.Package).WithMany(p => p.Posts).HasConstraintName("FK_Posts_Packages");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+                entity.Property(e => e.IsPublic).HasDefaultValue(true);
+
+                entity.Property(e => e.Title).HasMaxLength(150);
+                entity.Property(e => e.Location).HasMaxLength(150);
+
+                //  العلاقة الوحيدة اللي محتاجها
+                entity.HasOne(d => d.User).WithMany(p => p.Posts)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Posts_Users");
+            });
 
             entity.HasOne(d => d.User).WithMany(p => p.Posts)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -200,7 +230,7 @@ public partial class TripMateDbContext : DbContext
         {
             entity.HasKey(e => e.MediaId).HasName("PK__PostMedi__D0A840F4F9DE00FE");
 
-            entity.HasOne(d => d.Post).WithMany(p => p.PostMedia).HasConstraintName("FK_PostMedia_Posts");
+            //entity.HasOne(d => d.Post).WithMany(p => p.PostMedia).HasConstraintName("FK_PostMedia_Posts");
         });
 
         modelBuilder.Entity<RecommendationLog>(entity =>

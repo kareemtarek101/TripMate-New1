@@ -94,7 +94,18 @@ namespace TripMate.Application
                 {
                     Id = d.DestinationId,
                     Name = d.Name,
-                    Price = d.Price
+                    Country = d.Country,
+                    Description = d.Description,
+                    ImageUrl = d.ImageUrl,
+                    Price = d.Price,
+                    DurationDays = d.DurationDays,
+                    Itinerary = d.Itinerary,
+                    Activities = d.Activities,
+
+                    Rating = _context.Ratings
+                        .Where(r => r.ItemId == d.DestinationId
+                                 && r.ItemType == "Destination")
+                        .Average(r => (double?)r.Value) ?? 0
                 })
                 .ToListAsync();
         }
@@ -103,8 +114,25 @@ namespace TripMate.Application
         // 🔥 Update Preferences (NEW)
         public async Task<bool> UpdatePreferencesAsync(int userId, UpdateUserPreferenceRequest request)
         {
+            if (request.PreferredTripTypeId.HasValue)
+            {
+                var tripTypeExists = await _context.TripTypes
+                    .AnyAsync(t => t.TripTypeId == request.PreferredTripTypeId);
+
+                if (!tripTypeExists)
+                    return false;
+            }
             var pref = await _context.UserPreferences
                 .FirstOrDefaultAsync(x => x.UserId == userId);
+
+            if (request.PreferredTripTypeId.HasValue)
+            {
+                var exists = await _context.TripTypes
+                    .AnyAsync(t => t.TripTypeId == request.PreferredTripTypeId);
+
+                if (!exists)
+                    return false;
+            }
 
             if (pref == null)
             {
@@ -134,5 +162,19 @@ namespace TripMate.Application
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<UserDto?> GetCurrentUserAsync(int userId)
+        {
+            return await _context.Users
+                .Where(u => u.UserId == userId)
+                .Select(u => new UserDto
+                {
+                    UserId = u.UserId,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Phone = u.Phone
+                })
+                .FirstOrDefaultAsync();
+        }
+
     }
 }

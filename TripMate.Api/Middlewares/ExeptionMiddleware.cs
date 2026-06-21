@@ -1,71 +1,68 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 using System.Security;
 using System.Text.Json;
-using TripMate.Infrastructure.Persistence.Res;
 
-namespace TripMate.Api.Middlewares
+internal class ExceptionMiddleware
 {
-    internal class ExceptionMiddleware
+    private readonly RequestDelegate _next;
+    private readonly ILogger _logger;
+    private readonly IWebHostEnvironment _env;
+
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment env)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger _logger;
-        private readonly IWebHostEnvironment _env;
+        _next = next;
+        _logger = logger;
+        _env = env;
+    }
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment env)
+    public async Task Invoke(HttpContext httpContext)
+    {
+        try
         {
-            _next = next;
-            _logger = logger;
-            _env = env;
+            await _next(httpContext);
         }
-
-        public async Task Invoke(HttpContext httpContext)
+        catch (Exception ex)
         {
-            try
-            {
-                await _next(httpContext);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
+            var correlationId = Guid.NewGuid().ToString();
 
-                var statusCode = ex switch
+            _logger.LogError(ex, "Error Occurred | CorrelationId: {CorrelationId}", correlationId);
+
+            var statusCode = ex switch
+            {
+                KeyNotFoundException => 404,
+                ArgumentException => 400,
+                UnauthorizedAccessException => 401,
+                SecurityException => 403,
+                DbUpdateException => 400,
+                SqlException => 503,
+                _ => 500
+            };
+
+            httpContext.Response.StatusCode = statusCode;
+            httpContext.Response.ContentType = "application/json";
+
+            object response = _env.IsDevelopment()
+                ? new
                 {
-                    // Client-side issues (4xx)
-                    KeyNotFoundException => (int)HttpStatusCode.NotFound,                   // 404
-                    ArgumentNullException => (int)HttpStatusCode.BadRequest,                // 400
-                    ArgumentException => (int)HttpStatusCode.BadRequest,                    // 400
-                    FormatException => (int)HttpStatusCode.BadRequest,                      // 400
-                    InvalidOperationException => (int)HttpStatusCode.Conflict,              // 409
-                    UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,        // 401
-                    SecurityException => (int)HttpStatusCode.Forbidden,                     // 403
-                    TimeoutException => (int)HttpStatusCode.RequestTimeout,                 // 408
-                    NotSupportedException => (int)HttpStatusCode.MethodNotAllowed,          // 405
-                    DirectoryNotFoundException => (int)HttpStatusCode.NotFound,             // 404
-                    FileNotFoundException => (int)HttpStatusCode.NotFound,                  // 404
-                    EndOfStreamException => (int)HttpStatusCode.BadRequest,                 // 400
-
-                    // Data & persistence issues
-                    DbUpdateConcurrencyException => (int)HttpStatusCode.Conflict,           // 409
-                    DbUpdateException => (int)HttpStatusCode.BadRequest,                    // 400
-                    SqlException => (int)HttpStatusCode.ServiceUnavailable,                 // 503
-
-                    // Fallback
-                    _ => (int)HttpStatusCode.InternalServerError                            // 500
+                    statusCode,
+                    message = ex.Message,
+                    trace = ex.StackTrace,
+                    correlationId
+                }
+                : new
+                {
+                    statusCode,
+                    message = "Internal Server Error",
+                    correlationId
                 };
 
-                httpContext.Response.StatusCode = statusCode;
-                httpContext.Response.ContentType = "application/json";
+            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
 
-                object apiResponse = _env.IsDevelopment()
-                    ? new ApiResultResponse<string>(statusCode, ex.StackTrace ?? "", ex.Message)
-                    : new ApiResponse(statusCode, ex.Message);
-
-                var json = JsonSerializer.Serialize(apiResponse);
-
-                await httpContext.Response.WriteAsync(json);
-            }
+            await httpContext.Response.WriteAsync(json);
         }
     }
 }

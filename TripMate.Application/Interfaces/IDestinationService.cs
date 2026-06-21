@@ -7,4 +7,5 @@ public interface IDestinationService
     Task<List<DestinationDto>> FilterAsync(string? country, string? category, decimal? budget);
     Task<bool> CreateAsync(CreateDestinationRequest request);
 
+
 }

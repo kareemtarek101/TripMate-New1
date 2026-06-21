@@ -21,9 +21,11 @@ namespace TripMate.Api.Controllers
             if (string.IsNullOrWhiteSpace(city))
                 return BadRequest(new ApiResponse<string>("City is required"));
 
-            var result = await _serpService.GetHotels(city);
-
-            return Ok(new ApiResponse<List<HotelDto>>(result));
+            var hotels = await _serpService.GetHotels(city,
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(12))
+            );
+            return Ok(new ApiResponse<List<HotelDto>>(hotels));
         }
     }
 }

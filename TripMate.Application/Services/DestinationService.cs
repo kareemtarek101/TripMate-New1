@@ -16,13 +16,14 @@ public class DestinationService : IDestinationService
         var destination = new Destination
         {
             Name = request.Name,
+            CategoryId = request.CategoryId, 
             Country = request.Country,
             Description = request.Description,
             ImageUrl = request.ImageUrl,
             Price = request.Price,
             DurationDays = request.DurationDays,
             Itinerary = request.Itinerary,
-            Activities = request.Activities
+            Activities = request.Activities,
         };
 
         _context.Destinations.Add(destination);
@@ -41,7 +42,18 @@ public class DestinationService : IDestinationService
                 Name = d.Name,
                 Country = d.Country,
                 Description = d.Description,
-                ImageUrl = d.ImageUrl
+                ImageUrl = d.ImageUrl,
+                Price = d.Price,
+                DurationDays = d.DurationDays,
+                Itinerary = d.Itinerary,
+                Activities = d.Activities,
+                City = d.City,
+                AirportCode = d.AirportCode,
+
+                Rating = _context.Ratings
+                    .Where(r => r.ItemId == d.DestinationId
+                             && r.ItemType == "Destination")
+                    .Average(r => (double?)r.Value) ?? 0
             })
             .FirstOrDefaultAsync();
     }
@@ -62,6 +74,8 @@ public class DestinationService : IDestinationService
                 DurationDays = d.DurationDays,
                 Itinerary = d.Itinerary,
                 Activities = d.Activities,
+                City = d.City,
+                AirportCode = d.AirportCode,
 
                 Rating = _context.Ratings
                     .Where(r => r.ItemId == d.DestinationId && r.ItemType == "Destination")
@@ -93,6 +107,8 @@ public class DestinationService : IDestinationService
                 DurationDays = d.DurationDays,
                 Itinerary = d.Itinerary,
                 Activities = d.Activities,
+                City = d.City,
+                AirportCode = d.AirportCode,
 
                 Rating = _context.Ratings
                     .Where(r => r.ItemId == d.DestinationId && r.ItemType == "Destination")

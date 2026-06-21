@@ -20,7 +20,6 @@ namespace TripMate.Api.Controllers
             _interactionService = interactionService;
         }
 
-        // 🔍 تفاصيل حجز
         [Authorize]
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetDetails(int id)
@@ -30,7 +29,7 @@ namespace TripMate.Api.Controllers
             if (booking == null)
                 return NotFound(new ApiResponse<string>("Booking not found"));
 
-            return Ok(new ApiResponse<Booking>(booking));
+            return Ok(new ApiResponse<BookingDto>(booking));
         }
 
         // 🔥 إنشاء حجز + تسجيل interaction
@@ -54,13 +53,12 @@ namespace TripMate.Api.Controllers
         // 📋 حجوزاتي
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetMyBookings()
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetUserBookings(int userId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var data = await _bookingService.GetUserBookingsAsync(userId);
 
-            var result = await _bookingService.GetUserBookings(userId);
-
-            return Ok(new ApiResponse<List<BookingDto>>(result));
+            return Ok(new ApiResponse<List<BookingDto>>(data));
         }
 
         // ❌ إلغاء حجز

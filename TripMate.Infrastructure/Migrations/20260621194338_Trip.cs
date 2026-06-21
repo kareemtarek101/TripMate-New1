@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace TripMate.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class DB : Migration
+    public partial class Trip : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -49,6 +51,24 @@ namespace TripMate.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Flights__E3705765DA77E091", x => x.flight_id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false),
+                    ItemsJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -139,7 +159,9 @@ namespace TripMate.Infrastructure.Migrations
                     trip_type_id = table.Column<int>(type: "int", nullable: true),
                     name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     country = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    city = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    city = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    airport_code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DurationDays = table.Column<int>(type: "int", nullable: false),
                     Itinerary = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -325,12 +347,16 @@ namespace TripMate.Infrastructure.Migrations
                     package_id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     destination_id = table.Column<int>(type: "int", nullable: false),
+                    start_date = table.Column<DateOnly>(type: "date", nullable: false),
+                    end_date = table.Column<DateOnly>(type: "date", nullable: false),
+                    max_guests = table.Column<int>(type: "int", nullable: false),
                     name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     short_description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     full_description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     duration_days = table.Column<int>(type: "int", nullable: false),
                     base_price = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
                     currency = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    image_url = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     available_from = table.Column<DateOnly>(type: "date", nullable: true),
                     available_to = table.Column<DateOnly>(type: "date", nullable: true),
                     included_text = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -359,19 +385,18 @@ namespace TripMate.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     user_id = table.Column<int>(type: "int", nullable: false),
                     package_id = table.Column<int>(type: "int", nullable: true),
-                    destination_id = table.Column<int>(type: "int", nullable: false),
-                    flight_id = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FlightId = table.Column<int>(type: "int", nullable: true),
-                    booking_type = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    destination_id = table.Column<int>(type: "int", nullable: true),
+                    flight_id = table.Column<int>(type: "int", nullable: true),
+                    number_of_people = table.Column<int>(type: "int", nullable: false),
+                    status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    payment_status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    booking_type = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
                     currency = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     total_price = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    travel_start_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    travel_end_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    PaymentStatus = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    travel_start_date = table.Column<DateOnly>(type: "date", nullable: true),
+                    travel_end_date = table.Column<DateOnly>(type: "date", nullable: true),
                     booking_number = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    booked_at = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "(sysdatetime())"),
-                    BookingDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    booked_at = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "(sysdatetime())")
                 },
                 constraints: table =>
                 {
@@ -380,11 +405,10 @@ namespace TripMate.Infrastructure.Migrations
                         name: "FK_Bookings_Destinations",
                         column: x => x.destination_id,
                         principalTable: "Destinations",
-                        principalColumn: "destination_id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "destination_id");
                     table.ForeignKey(
                         name: "FK_Bookings_Flights",
-                        column: x => x.FlightId,
+                        column: x => x.flight_id,
                         principalTable: "Flights",
                         principalColumn: "flight_id");
                     table.ForeignKey(
@@ -455,26 +479,27 @@ namespace TripMate.Infrastructure.Migrations
                     post_id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     user_id = table.Column<int>(type: "int", nullable: false),
-                    destination_id = table.Column<int>(type: "int", nullable: true),
-                    package_id = table.Column<int>(type: "int", nullable: true),
                     title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    content = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    trip_type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    rating = table.Column<int>(type: "int", nullable: true),
+                    location = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    image_url = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    rating = table.Column<int>(type: "int", nullable: false),
                     is_public = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "(sysdatetime())")
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "(sysdatetime())"),
+                    DestinationId = table.Column<int>(type: "int", nullable: true),
+                    PackageId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Posts__3ED7876658D7ED95", x => x.post_id);
                     table.ForeignKey(
-                        name: "FK_Posts_Destinations",
-                        column: x => x.destination_id,
+                        name: "FK_Posts_Destinations_DestinationId",
+                        column: x => x.DestinationId,
                         principalTable: "Destinations",
                         principalColumn: "destination_id");
                     table.ForeignKey(
-                        name: "FK_Posts_Packages",
-                        column: x => x.package_id,
+                        name: "FK_Posts_Packages_PackageId",
+                        column: x => x.PackageId,
                         principalTable: "Packages",
                         principalColumn: "package_id");
                     table.ForeignKey(
@@ -570,6 +595,28 @@ namespace TripMate.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BookingItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BookingId = table.Column<int>(type: "int", nullable: false),
+                    ItemType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ItemId = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BookingItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BookingItems_Bookings_BookingId",
+                        column: x => x.BookingId,
+                        principalTable: "Bookings",
+                        principalColumn: "booking_id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BookingTravellers",
                 columns: table => new
                 {
@@ -632,12 +679,26 @@ namespace TripMate.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK__PostMedi__D0A840F4F9DE00FE", x => x.media_id);
                     table.ForeignKey(
-                        name: "FK_PostMedia_Posts",
+                        name: "FK_PostMedia_Posts_post_id",
                         column: x => x.post_id,
                         principalTable: "Posts",
                         principalColumn: "post_id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "role_id", "description", "name" },
+                values: new object[,]
+                {
+                    { 1, null, "Admin" },
+                    { 2, null, "Traveller" }
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookingItems_BookingId",
+                table: "BookingItems",
+                column: "BookingId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookings_destination_id",
@@ -645,9 +706,9 @@ namespace TripMate.Infrastructure.Migrations
                 column: "destination_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bookings_FlightId",
+                name: "IX_Bookings_flight_id",
                 table: "Bookings",
-                column: "FlightId");
+                column: "flight_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookings_package_id",
@@ -726,14 +787,14 @@ namespace TripMate.Infrastructure.Migrations
                 column: "post_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_destination_id",
+                name: "IX_Posts_DestinationId",
                 table: "Posts",
-                column: "destination_id");
+                column: "DestinationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_package_id",
+                name: "IX_Posts_PackageId",
                 table: "Posts",
-                column: "package_id");
+                column: "PackageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Posts_user_id",
@@ -817,6 +878,9 @@ namespace TripMate.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BookingItems");
+
+            migrationBuilder.DropTable(
                 name: "BookingTravellers");
 
             migrationBuilder.DropTable(
@@ -836,6 +900,9 @@ namespace TripMate.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
                 name: "PostMedia");

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TripMate.Application;
 
 namespace TripMate.Api.Controllers
@@ -54,6 +56,8 @@ namespace TripMate.Api.Controllers
                 return BadRequest("Failed to update preferences");
 
             return Ok("Preferences updated successfully");
+
+
         }
 
         // 👁 Recently Viewed
@@ -63,6 +67,22 @@ namespace TripMate.Api.Controllers
             var result = await _userService.GetRecentlyViewed(userId);
 
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = int.Parse(
+                User.FindFirst(ClaimTypes.NameIdentifier)!.Value
+            );
+
+            var user = await _userService.GetCurrentUserAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
         }
     }
 }

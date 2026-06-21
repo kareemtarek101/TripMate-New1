@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TripMate.Application;
-using TripMate.Application.Services;
 using TripMate.Application.Interface;
+using TripMate.Application.Services;
 
 namespace TripMate.Api.Controllers
 {
@@ -39,6 +39,32 @@ namespace TripMate.Api.Controllers
             return Ok(data);
         }
 
+        // 📄 Get Destination Details By Id
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var destination = await _destinationService.GetByIdAsync(id);
+
+            if (destination == null)
+                return NotFound();
+
+            return Ok(destination);
+        }
+
+        // 👀 Get Destination + Save Interaction
+        [HttpGet("{id}/view")]
+        public async Task<IActionResult> GetByIdWithInteraction(int id, int userId)
+        {
+            var destination = await _destinationService.GetByIdAsync(id);
+
+            if (destination == null)
+                return NotFound();
+
+            await _interactionService.AddInteraction(userId, id, "View");
+
+            return Ok(destination);
+        }
+
         // 🔍 Search
         [HttpGet("search")]
         public async Task<IActionResult> Search(string query)
@@ -49,41 +75,47 @@ namespace TripMate.Api.Controllers
 
         // 🎯 Filter
         [HttpGet("filter")]
-        public async Task<IActionResult> Filter(string? country, string? category, decimal? budget)
+        public async Task<IActionResult> Filter(
+            string? country,
+            string? category,
+            decimal? budget)
         {
-            var result = await _destinationService.FilterAsync(country, category, budget);
+            var result = await _destinationService.FilterAsync(
+                country,
+                category,
+                budget);
 
             return Ok(result);
         }
 
         // 🧠 Smart Destinations
         [HttpGet("smart-recommendations")]
-        public async Task<IActionResult> GetSmart(int userId, decimal budget)
+        public async Task<IActionResult> GetSmart(
+            int userId,
+            decimal budget)
         {
-            var result = await _recommendationService.GetSmartRecommendations(userId, budget);
+            var result =
+                await _recommendationService.GetSmartRecommendations(
+                    userId,
+                    budget);
+
             return Ok(result);
         }
 
         // 🔥 Smart Packages
         [HttpGet("smart-packages")]
-        public async Task<IActionResult> GetSmartPackages(int userId, decimal budget, string from)
+        public async Task<IActionResult> GetSmartPackages(
+            int userId,
+            decimal budget,
+            string from)
         {
-            var result = await _recommendationService.GetSmartPackages(userId, budget, from);
+            var result =
+                await _recommendationService.GetSmartPackages(
+                    userId,
+                    budget,
+                    from);
+
             return Ok(result);
-        }
-
-        // 📄 Get By Id + Interaction
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, int userId)
-        {
-            var destination = await _destinationService.GetByIdAsync(id);
-
-            if (destination == null)
-                return NotFound();
-
-            await _interactionService.AddInteraction(userId, id, "View");
-
-            return Ok(destination);
         }
     }
 }

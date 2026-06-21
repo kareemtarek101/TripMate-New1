@@ -48,10 +48,20 @@ public class FavoriteService : IFavoriteService
             .AnyAsync(x => x.UserId == userId && x.ItemId == itemId && x.ItemType == itemType);
     }
 
-    public async Task<List<Favorite>> GetUserFavorites(int userId)
+    public async Task<IEnumerable<FavoriteDto>> GetUserFavoritesAsync(int userId)
     {
-        return await _context.Favorites
-            .Where(x => x.UserId == userId)
+        var favorites = await _context.Favorites
+            .Where(f => f.UserId == userId)
             .ToListAsync();
+
+        var result = favorites.Select(f => new FavoriteDto
+        {
+            FavoriteId = f.FavoriteId,
+            UserId = f.UserId,
+            ItemType = f.ItemType,
+            ItemId = f.ItemId
+        });
+
+        return result;
     }
 }

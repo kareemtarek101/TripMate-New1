@@ -15,19 +15,30 @@ public class BookingService : IBookingService
     public async Task<bool> CreateBooking(int userId, CreateBookingRequest request)
     {
         // 🔥 تأكد إن الرحلة موجودة
-        var destinationExists = await _context.Destinations
-            .AnyAsync(d => d.DestinationId == request.DestinationId);
+        var destination = await _context.Destinations
+    .FirstOrDefaultAsync(d => d.DestinationId == request.DestinationId);
 
-        if (!destinationExists)
+        if (destination == null)
             return false;
 
         var booking = new Booking
         {
             UserId = userId,
             DestinationId = request.DestinationId,
-            BookingDate = DateTime.UtcNow,
+
+            BookedAt = DateTime.UtcNow,
+
             NumberOfPeople = request.NumberOfPeople,
-            Status = "Confirmed"
+
+            TotalPrice = destination.Price * request.NumberOfPeople,
+
+            Currency = "EGP",
+
+            PaymentStatus = "Pending",
+
+            Status = "Confirmed",
+
+            BookingType = "Destination"
         };
 
         _context.Bookings.Add(booking);
@@ -37,26 +48,69 @@ public class BookingService : IBookingService
     }
 
     // ✅ كل حجوزات اليوزر
-    public async Task<List<BookingDto>> GetUserBookings(int userId)
+    public async Task<List<BookingDto>> GetUserBookingsAsync(int userId)
     {
-        return await _context.Bookings
-            .Where(x => x.UserId == userId)
-            .Select(x => new BookingDto
+        var bookings = await _context.Bookings
+            .Where(b => b.UserId == userId)
+            .Include(b => b.Destination)
+            .Include(b => b.Package)
+            .OrderByDescending(b => b.BookedAt)
+            .Select(b => new BookingDto
             {
-                Id = x.BookingId,
-                DestinationId = x.DestinationId,
-                BookingDate = x.BookingDate,
-                NumberOfPeople = x.NumberOfPeople,
-                Status = x.Status
+                Id = b.BookingId,
+
+                UserId = b.UserId,
+                DestinationId = b.DestinationId ?? 0,
+                NumberOfPeople = b.NumberOfPeople,
+
+                BookingNumber = b.BookingNumber,
+                BookingType = b.BookingType,
+                TotalPrice = b.TotalPrice,
+                Currency = b.Currency,
+                PaymentStatus = b.PaymentStatus,
+                Status = b.Status,
+                BookingDate = b.BookedAt,
+
+                DestinationName = b.Destination != null ? b.Destination.Name : null,
+                PackageName = b.Package != null ? b.Package.Name : null
             })
             .ToListAsync();
+
+        return bookings;
     }
 
     // ✅ حجز واحد
-    public async Task<Booking?> GetBookingById(int id)
+    public async Task<BookingDto?> GetBookingById(int id)
     {
         return await _context.Bookings
-            .FirstOrDefaultAsync(x => x.BookingId == id);
+            .Include(b => b.Destination)
+            .Include(b => b.Package)
+            .Where(b => b.BookingId == id)
+            .Select(b => new BookingDto
+            {
+                Id = b.BookingId,
+
+                UserId = b.UserId,
+                DestinationId = b.DestinationId ?? 0,
+                NumberOfPeople = b.NumberOfPeople,
+
+                BookingNumber = b.BookingNumber,
+                BookingType = b.BookingType,
+                TotalPrice = b.TotalPrice,
+                Currency = b.Currency,
+                PaymentStatus = b.PaymentStatus,
+                Status = b.Status,
+                BookingDate = b.BookedAt,
+
+                DestinationName = b.Destination != null
+                    ? b.Destination.Name
+                    : null,
+
+                PackageName = b.Package != null
+                    ? b.Package.Name
+                    : null
+            })
+            .FirstOrDefaultAsync();
     }
 
     // ✅ إلغاء الحجز (Soft Cancel)

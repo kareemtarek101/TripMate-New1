@@ -12,8 +12,8 @@ using TripMate.Infrastructure.Persistence;
 namespace TripMate.Infrastructure.Migrations
 {
     [DbContext(typeof(TripMateDbContext))]
-    [Migration("20260502212822_DB")]
-    partial class DB
+    [Migration("20260621194338_Trip")]
+    partial class Trip
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,34 @@ namespace TripMate.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("BookingItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.ToTable("BookingItems");
+                });
 
             modelBuilder.Entity("Category", b =>
                 {
@@ -42,6 +70,39 @@ namespace TripMate.Infrastructure.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("PaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PaymentTransactions");
+                });
+
             modelBuilder.Entity("TripMate.Infrastructure.Persistence.Entities.Booking", b =>
                 {
                     b.Property<int>("BookingId")
@@ -57,9 +118,6 @@ namespace TripMate.Infrastructure.Migrations
                         .HasColumnName("booked_at")
                         .HasDefaultValueSql("(sysdatetime())");
 
-                    b.Property<DateTime>("BookingDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("BookingNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -67,7 +125,6 @@ namespace TripMate.Infrastructure.Migrations
                         .HasColumnName("booking_number");
 
                     b.Property<string>("BookingType")
-                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)")
                         .HasColumnName("booking_type");
@@ -78,16 +135,17 @@ namespace TripMate.Infrastructure.Migrations
                         .HasColumnType("nvarchar(10)")
                         .HasColumnName("currency");
 
-                    b.Property<int>("DestinationId")
+                    b.Property<int?>("DestinationId")
                         .HasColumnType("int")
                         .HasColumnName("destination_id");
 
                     b.Property<int?>("FlightId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("flight_id");
 
                     b.Property<int>("NumberOfPeople")
                         .HasColumnType("int")
-                        .HasColumnName("flight_id");
+                        .HasColumnName("number_of_people");
 
                     b.Property<int?>("PackageId")
                         .HasColumnType("int")
@@ -96,21 +154,24 @@ namespace TripMate.Infrastructure.Migrations
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("payment_status");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("status");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasColumnType("decimal(10, 2)")
+                        .HasColumnType("decimal(10,2)")
                         .HasColumnName("total_price");
 
-                    b.Property<DateOnly>("TravelEndDate")
+                    b.Property<DateOnly?>("TravelEndDate")
                         .HasColumnType("date")
                         .HasColumnName("travel_end_date");
 
-                    b.Property<DateOnly>("TravelStartDate")
+                    b.Property<DateOnly?>("TravelStartDate")
                         .HasColumnType("date")
                         .HasColumnName("travel_start_date");
 
@@ -193,12 +254,22 @@ namespace TripMate.Infrastructure.Migrations
                     b.Property<string>("Activities")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AirportCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("airport_code");
+
                     b.Property<decimal?>("AverageRating")
                         .HasColumnType("decimal(3, 2)")
                         .HasColumnName("average_rating");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("city");
 
                     b.Property<string>("Country")
                         .IsRequired()
@@ -221,9 +292,7 @@ namespace TripMate.Infrastructure.Migrations
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("city");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -540,6 +609,10 @@ namespace TripMate.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("duration_days");
 
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
                     b.Property<string>("ExcludedText")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("excluded_text");
@@ -547,6 +620,10 @@ namespace TripMate.Infrastructure.Migrations
                     b.Property<string>("FullDescription")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("full_description");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("image_url");
 
                     b.Property<string>("IncludedText")
                         .HasColumnType("nvarchar(max)")
@@ -558,6 +635,10 @@ namespace TripMate.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<int>("MaxGuests")
+                        .HasColumnType("int")
+                        .HasColumnName("max_guests");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -568,6 +649,10 @@ namespace TripMate.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("short_description");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
 
                     b.Property<string>("Tags")
                         .HasMaxLength(255)
@@ -723,19 +808,23 @@ namespace TripMate.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PostId"));
 
-                    b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("content");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("(sysdatetime())");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
                     b.Property<int?>("DestinationId")
-                        .HasColumnType("int")
-                        .HasColumnName("destination_id");
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("image_url");
 
                     b.Property<bool>("IsPublic")
                         .ValueGeneratedOnAdd()
@@ -743,11 +832,16 @@ namespace TripMate.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_public");
 
-                    b.Property<int?>("PackageId")
-                        .HasColumnType("int")
-                        .HasColumnName("package_id");
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("location");
 
-                    b.Property<int?>("Rating")
+                    b.Property<int?>("PackageId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
                         .HasColumnType("int")
                         .HasColumnName("rating");
 
@@ -756,11 +850,6 @@ namespace TripMate.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)")
                         .HasColumnName("title");
-
-                    b.Property<string>("TripType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("trip_type");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
@@ -986,6 +1075,18 @@ namespace TripMate.Infrastructure.Migrations
                         .HasName("PK__Roles__760965CCFF80CC4C");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 1,
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            Name = "Traveller"
+                        });
                 });
 
             modelBuilder.Entity("TripMate.Infrastructure.Persistence.Entities.TripType", b =>
@@ -1252,13 +1353,22 @@ namespace TripMate.Infrastructure.Migrations
                     b.ToTable("UserInteractions");
                 });
 
+            modelBuilder.Entity("BookingItem", b =>
+                {
+                    b.HasOne("TripMate.Infrastructure.Persistence.Entities.Booking", "Booking")
+                        .WithMany("Items")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
             modelBuilder.Entity("TripMate.Infrastructure.Persistence.Entities.Booking", b =>
                 {
                     b.HasOne("TripMate.Infrastructure.Persistence.Entities.Destination", "Destination")
                         .WithMany("Bookings")
                         .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_Bookings_Destinations");
 
                     b.HasOne("TripMate.Infrastructure.Persistence.Entities.Flight", "Flight")
@@ -1410,13 +1520,11 @@ namespace TripMate.Infrastructure.Migrations
                 {
                     b.HasOne("TripMate.Infrastructure.Persistence.Entities.Destination", "Destination")
                         .WithMany("Posts")
-                        .HasForeignKey("DestinationId")
-                        .HasConstraintName("FK_Posts_Destinations");
+                        .HasForeignKey("DestinationId");
 
-                    b.HasOne("TripMate.Infrastructure.Persistence.Entities.Package", "Package")
+                    b.HasOne("TripMate.Infrastructure.Persistence.Entities.Package", null)
                         .WithMany("Posts")
-                        .HasForeignKey("PackageId")
-                        .HasConstraintName("FK_Posts_Packages");
+                        .HasForeignKey("PackageId");
 
                     b.HasOne("TripMate.Infrastructure.Persistence.Entities.User", "User")
                         .WithMany("Posts")
@@ -1425,8 +1533,6 @@ namespace TripMate.Infrastructure.Migrations
                         .HasConstraintName("FK_Posts_Users");
 
                     b.Navigation("Destination");
-
-                    b.Navigation("Package");
 
                     b.Navigation("User");
                 });
@@ -1437,8 +1543,7 @@ namespace TripMate.Infrastructure.Migrations
                         .WithMany("PostMedia")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_PostMedia_Posts");
+                        .IsRequired();
 
                     b.Navigation("Post");
                 });
@@ -1568,6 +1673,8 @@ namespace TripMate.Infrastructure.Migrations
             modelBuilder.Entity("TripMate.Infrastructure.Persistence.Entities.Booking", b =>
                 {
                     b.Navigation("BookingTravellers");
+
+                    b.Navigation("Items");
 
                     b.Navigation("Payments");
                 });

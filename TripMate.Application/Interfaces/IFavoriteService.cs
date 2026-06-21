@@ -8,5 +8,5 @@ public interface IFavoriteService
 
     Task<bool> IsFavorite(int userId, int itemId, string itemType);
 
-    Task<List<Favorite>> GetUserFavorites(int userId);
+    Task<IEnumerable<FavoriteDto>> GetUserFavoritesAsync(int userId);
 }

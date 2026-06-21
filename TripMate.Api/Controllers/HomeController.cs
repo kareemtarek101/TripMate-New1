@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TripMate.Application;
-using TripMate.Application.Services;
 using TripMate.Application.Interface;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class HomeController : ControllerBase
@@ -19,14 +19,22 @@ public class HomeController : ControllerBase
         _destinationService = destinationService;
     }
 
-    [HttpGet("{userId}")]
-    public async Task<IActionResult> GetHome(int userId)
+    // ✅ بدون userId في URL
+    [HttpGet]
+    public async Task<IActionResult> GetHome(
+    [FromQuery] decimal budget = 2000,
+    [FromQuery] string from = "CAI")
     {
-        // 🧠 Recommendations
-        var recommended = await _recommendationService
-            .GetSmartRecommendations(userId, 2000);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        // 🔥 Popular
+        if (string.IsNullOrEmpty(userIdClaim))
+            return Unauthorized();
+
+        int userId = int.Parse(userIdClaim);
+
+        var recommended = await _recommendationService
+            .GetSmartRecommendations(userId, budget);
+
         var popular = await _destinationService.GetAllAsync(1, 10);
 
         return Ok(new
